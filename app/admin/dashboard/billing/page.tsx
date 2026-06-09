@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { VENDORS, MOCK_ORDERS, Vendor, Order, OrderItem } from "../orders/data";
+import LeftSidebar from "@/components/LeftSidebar";
+import { INITIAL_ADMINS } from "../admins/data";
 
 // Helper function to render sidebar icons
 const renderSidebarIcon = (key: string, className = "w-5 h-5") => {
@@ -105,7 +107,25 @@ const getOrderMonthLong = (dateStr: string) => {
 };
 
 export default function BillingPage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [pagePermission, setPagePermission] = useState<"view" | "update" | "create" | null>("create");
+  useEffect(() => {
+    const storedAdmins = localStorage.getItem("stark_admins_list");
+    const storedActiveId = localStorage.getItem("stark_active_admin_id");
+    let currentAdmins = INITIAL_ADMINS;
+    if (storedAdmins) {
+      try { currentAdmins = JSON.parse(storedAdmins); } catch(e) {}
+    }
+    const selectedAdmin = currentAdmins.find(a => a.id === storedActiveId && a.status === "Active") || currentAdmins[0];
+    if (selectedAdmin) {
+      if (selectedAdmin.id === "adm1") {
+        setPagePermission("create");
+      } else {
+        setPagePermission(selectedAdmin.permissions.billing || null);
+      }
+    }
+  }, []);
+
+const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Selected view and vendor state
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
@@ -444,201 +464,24 @@ export default function BillingPage() {
   return (
     <div className="flex min-h-screen w-full bg-[#F9FAFB] text-[#1F2937] font-sans overflow-x-hidden">
       
-      {/* BEGIN: LeftSidebar */}
-      <aside
-        className={`w-64 bg-stark-sidebar border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-40 transition-transform duration-300 md:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-        data-purpose="navigation-sidebar"
-      >
-        {/* Logo Section */}
-        <div className="p-6 flex items-center space-x-3">
-          <div className="w-8 h-8 bg-stark-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">
-            S
-          </div>
-          <div>
-            <h1 className="font-bold text-lg leading-tight">Stark</h1>
-            <p className="text-xs text-stark-muted">Analytics Dashboard</p>
-          </div>
+      <LeftSidebar activePage="billing" isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+
+  {pagePermission === null ? (
+    <main className="ml-0 md:ml-64 flex-1 p-6 md:p-8 flex items-center justify-center min-h-screen">
+      <div className="max-w-md w-full bg-white rounded-2xl border border-gray-150 p-8 shadow-lg text-center">
+        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </svg>
         </div>
-
-        {/* Navigation Links */}
-        <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto">
-          <p className="text-[10px] uppercase font-semibold text-stark-muted px-2 mb-2 tracking-wider">
-            Main Menu
-          </p>
-          
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard"
-          >
-            {renderSidebarIcon("dashboard")}
-            <span>Dashboard</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/orders"
-          >
-            {renderSidebarIcon("orders")}
-            <span>Orders</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/categories"
-          >
-            {renderSidebarIcon("categories")}
-            <span>Categories</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/subcategories"
-          >
-            {renderSidebarIcon("subcategories")}
-            <span>Sub Categories</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/minicategories"
-          >
-            {renderSidebarIcon("minicategories")}
-            <span>Mini Categories</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/macrocategories"
-          >
-            {renderSidebarIcon("macrocategories")}
-            <span>Macro Categories</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/products"
-          >
-            {renderSidebarIcon("products")}
-            <span>Products</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-stark-primary/10 text-stark-primary font-medium"
-            data-purpose="nav-item-active"
-            href="/admin/dashboard/billing"
-          >
-            {renderSidebarIcon("billing")}
-            <span>Billing</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/customers"
-          >
-            {renderSidebarIcon("customers")}
-            <span>Customers</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/vendors"
-          >
-            {renderSidebarIcon("vendors")}
-            <span>Vendors</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/notifications"
-          >
-            {renderSidebarIcon("notifications")}
-            <span>Notifications</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/emails"
-          >
-            {renderSidebarIcon("emails")}
-            <span>Emails</span>
-          </Link>
-
-          <p className="text-[10px] uppercase font-semibold text-stark-muted px-2 pt-6 mb-2 tracking-wider">
-            Account
-          </p>
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            href="#"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-            </svg>
-            <span>My Account</span>
-          </Link>
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            href="#"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-              <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-            </svg>
-            <span>Settings</span>
-          </Link>
-          
-          <div className="mt-4 pb-4">
-            <Link
-              className="flex items-center space-x-3 px-3 py-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
-              href="/admin/login"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-              </svg>
-              <span>Logout</span>
-            </Link>
-          </div>
-        </nav>
-
-        {/* User Profile at Bottom */}
-        <div className="p-4 border-t border-gray-100 mt-auto" data-purpose="user-info">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-stark-accent overflow-hidden border-2 border-stark-primary/20">
-              <img
-                alt="Ronald Richards"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0E_P6EyLM3jbUWt532-6emYjDqrI5QO96-RdiPp2RL4ySK1ENEHNUe6vjTwDlhHoubp7jcnLqDV7oBm_LXeq1kzJ9QjorlgA-aEwuBH_3bnANUQ5I_CL1Ujt-F4EtW3MLRo3EFFoCYFh_vpeeqi6hNPw3-PYEOwxPWfAaY0jVvKcgDvnbc8ZilpJSvT16Li-88HvTRcqnHb2AlESYl3_48_qMyuaPkNjKXwO2C2C4q3Mt_BATrM_PpJYS35ckg9-NZY0P5L6Ypo0"
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">Ronald Richards</p>
-              <p className="text-[10px] text-stark-muted truncate">
-                ronaldrichards@gmail.com
-              </p>
-            </div>
-          </div>
-        </div>
-      </aside>
-      {/* END: LeftSidebar */}
-
-      {/* Sidebar Mobile Backdrop */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/45 z-30 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        ></div>
-      )}
-
-      {/* BEGIN: MainContent */}
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h3>
+        <p className="text-sm text-gray-500 mb-6">
+          You do not have permissions to view this module. Please switch to an admin profile that has view, edit, or create access.
+        </p>
+      </div>
+    </main>
+  ) : (
+  /* BEGIN: MainContent */
       <main className="ml-0 md:ml-64 flex-1 min-w-0 w-full p-4 md:p-8 min-h-screen transition-all duration-300">
         
         {/* Mobile Header Bar */}
@@ -875,28 +718,34 @@ export default function BillingPage() {
                 </span>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="bg-stark-accent border-b border-gray-100 text-[10px] uppercase font-bold text-stark-muted tracking-wider">
-                      <th className="px-6 py-4">Vendor Business</th>
-                      <th className="px-6 py-4 text-center">Orders Count</th>
-                      <th className="px-6 py-4 text-right">Order Amount</th>
-                      <th className="px-6 py-4 text-right">Refund Totals</th>
-                      <th className="px-6 py-4 text-right">Vendor Payout (90%)</th>
-                      <th className="px-6 py-4 text-right text-indigo-700">Stark Profit (10%)</th>
-                      <th className="px-6 py-4 text-center">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-150 text-xs">
-                    {latestVendorsList.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="text-center py-10 text-stark-muted font-medium">
-                          No vendor billing data found matching the selected filters.
-                        </td>
+              {latestVendorsList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-gray-150 p-12 shadow-sm text-center">
+                  <img
+                    src="/empty-state.png"
+                    alt="Empty state illustration"
+                    className="w-64 h-64 object-contain mb-6 rounded-2xl"
+                  />
+                  <h3 className="text-lg font-black text-stark-text mb-2">No Billing Records Found</h3>
+                  <p className="text-sm text-stark-muted max-w-sm">
+                    There are currently no records available to display.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-left">
+                    <thead>
+                      <tr className="bg-stark-accent border-b border-gray-100 text-[10px] uppercase font-bold text-stark-muted tracking-wider">
+                        <th className="px-6 py-4">Vendor Business</th>
+                        <th className="px-6 py-4 text-center">Orders Count</th>
+                        <th className="px-6 py-4 text-right">Order Amount</th>
+                        <th className="px-6 py-4 text-right">Refund Totals</th>
+                        <th className="px-6 py-4 text-right">Vendor Payout (90%)</th>
+                        <th className="px-6 py-4 text-right text-indigo-700">Stark Profit (10%)</th>
+                        <th className="px-6 py-4 text-center">Action</th>
                       </tr>
-                    ) : (
-                      latestVendorsList.map(({ vendor, ordersCount, orderAmount, refundCount, refundAmount, quotedAmount, profit }) => (
+                    </thead>
+                    <tbody className="divide-y divide-gray-150 text-xs">
+                      {latestVendorsList.map(({ vendor, ordersCount, orderAmount, refundCount, refundAmount, quotedAmount, profit }) => (
                         <tr key={vendor.id} className="hover:bg-stark-accent/50 transition-colors">
                           <td className="px-6 py-4">
                             <div className="flex items-center space-x-3">
@@ -912,20 +761,20 @@ export default function BillingPage() {
                                 </div>
                               )}
                               <div>
-                                <h4 className="font-bold text-stark-text">{vendor.name}</h4>
-                                <p className="text-[10px] text-stark-muted">{vendor.email}</p>
+                                <div className="font-bold text-stark-text">{vendor.name}</div>
+                                <div className="text-[10px] text-stark-muted mt-0.5">{vendor.email}</div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-center font-semibold">
-                            {ordersCount}
+                          <td className="px-6 py-4 text-center font-semibold text-stark-text">
+                            {ordersCount} orders
                           </td>
                           <td className="px-6 py-4 text-right font-bold text-stark-text">
                             ${orderAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                           <td className="px-6 py-4 text-right font-medium text-red-600">
                             ${refundAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            {refundCount > 0 && <span className="text-[10px] text-red-500 block">({refundCount} orders)</span>}
+                            <span className="text-[10px] text-stark-muted block">({refundCount} items)</span>
                           </td>
                           <td className="px-6 py-4 text-right font-semibold text-emerald-700">
                             ${quotedAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -945,11 +794,11 @@ export default function BillingPage() {
                             </button>
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </section>
 
           </div>
@@ -1147,6 +996,7 @@ export default function BillingPage() {
         )}
 
       </main>
+      )}
       {/* END: MainContent */}
 
     </div>

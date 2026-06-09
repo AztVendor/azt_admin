@@ -1,0 +1,7 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# This directs Netlify to use the Next.js runtime plugin for server-side rendering and redirect execution.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

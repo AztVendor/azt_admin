@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   MOCK_ORDERS,
@@ -15,10 +15,30 @@ import {
   Vendor,
   DeliveryPartner
 } from "./data";
+import LeftSidebar from "@/components/LeftSidebar";
+import { INITIAL_ADMINS } from "../admins/data";
 
 export default function OrdersPage() {
   // Page States
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [pagePermission, setPagePermission] = useState<"view" | "update" | "create" | null>("create");
+  useEffect(() => {
+    const storedAdmins = localStorage.getItem("stark_admins_list");
+    const storedActiveId = localStorage.getItem("stark_active_admin_id");
+    let currentAdmins = INITIAL_ADMINS;
+    if (storedAdmins) {
+      try { currentAdmins = JSON.parse(storedAdmins); } catch(e) {}
+    }
+    const selectedAdmin = currentAdmins.find(a => a.id === storedActiveId && a.status === "Active") || currentAdmins[0];
+    if (selectedAdmin) {
+      if (selectedAdmin.id === "adm1") {
+        setPagePermission("create");
+      } else {
+        setPagePermission(selectedAdmin.permissions.orders || null);
+      }
+    }
+  }, []);
+
+const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -631,379 +651,24 @@ export default function OrdersPage() {
   return (
     <div className="flex min-h-screen w-full bg-[#F9FAFB] text-[#1F2937] font-sans overflow-x-hidden">
       
-      {/* BEGIN: LeftSidebar */}
-      <aside
-        className={`w-64 bg-stark-sidebar border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-40 transition-transform duration-300 md:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
-        data-purpose="navigation-sidebar"
-      >
-        {/* Logo Section */}
-        <div className="p-6 flex items-center space-x-3">
-          <div className="w-8 h-8 bg-stark-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">
-            S
-          </div>
-          <div>
-            <h1 className="font-bold text-lg leading-tight">Stark</h1>
-            <p className="text-xs text-stark-muted">Analytics Dashboard</p>
-          </div>
+      <LeftSidebar activePage="orders" isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+
+  {pagePermission === null ? (
+    <main className="ml-0 md:ml-64 flex-1 p-6 md:p-8 flex items-center justify-center min-h-screen">
+      <div className="max-w-md w-full bg-white rounded-2xl border border-gray-150 p-8 shadow-lg text-center">
+        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+          </svg>
         </div>
-
-        {/* Navigation Links */}
-        <nav className="flex-1 px-4 space-y-1 mt-4 overflow-y-auto">
-          <p className="text-[10px] uppercase font-semibold text-stark-muted px-2 mb-2 tracking-wider">
-            Main Menu
-          </p>
-          
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Dashboard</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-stark-primary/10 text-stark-primary font-medium"
-            data-purpose="nav-item-active"
-            href="/admin/dashboard/orders"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Orders</span>
-          </Link>
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/categories"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M4 6h16M4 10h16M4 14h16M4 18h16"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Categories</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/subcategories"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M4 6h16M7 10h13M7 14h13M4 18h16"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Sub Categories</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/minicategories"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M4 6h16M7 10h13M10 14h10M4 18h16"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Mini Categories</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/macrocategories"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M4 6h16M7 10h13M10 14h10M13 18h7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Macro Categories</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/products"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Products</span>
-          </Link>
-
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/billing"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Billing</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/customers"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Customers</span>
-          </Link>
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/vendors"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Vendors</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/notifications"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Notifications</span>
-          </Link>
-
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            data-purpose="nav-item"
-            href="/admin/dashboard/emails"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Emails</span>
-          </Link>
-
-          <p className="text-[10px] uppercase font-semibold text-stark-muted px-2 pt-6 mb-2 tracking-wider">
-            Account
-          </p>
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            href="#"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>My Account</span>
-          </Link>
-          <Link
-            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-stark-muted hover:bg-stark-accent transition-colors"
-            href="#"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-              <path
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-              />
-            </svg>
-            <span>Settings</span>
-          </Link>
-
-          <div className="mt-4 pb-4">
-            <Link
-              className="flex items-center space-x-3 px-3 py-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
-              href="/admin/login"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                />
-              </svg>
-              <span>Logout</span>
-            </Link>
-          </div>
-        </nav>
-
-        {/* User Profile at Bottom */}
-        <div className="p-4 border-t border-gray-100 mt-auto" data-purpose="user-info">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-stark-accent overflow-hidden border-2 border-stark-primary/20">
-              <img
-                alt="Ronald Richards"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0E_P6EyLM3jbUWt532-6emYjDqrI5QO96-RdiPp2RL4ySK1ENEHNUe6vjTwDlhHoubp7jcnLqDV7oBm_LXeq1kzJ9QjorlgA-aEwuBH_3bnANUQ5I_CL1Ujt-F4EtW3MLRo3EFFoCYFh_vpeeqi6hNPw3-PYEOwxPWfAaY0jVvKcgDvnbc8ZilpJSvT16Li-88HvTRcqnHb2AlESYl3_48_qMyuaPkNjKXwO2C2C4q3Mt_BATrM_PpJYS35ckg9-NZY0P5L6Ypo0"
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">Ronald Richards</p>
-              <p className="text-[10px] text-stark-muted truncate">
-                ronaldrichards@gmail.com
-              </p>
-            </div>
-          </div>
-        </div>
-      </aside>
-      {/* END: LeftSidebar */}
-
-      {/* Sidebar Mobile Backdrop */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/45 z-30 md:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        ></div>
-      )}
-
-      {/* BEGIN: MainContent */}
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Access Denied</h3>
+        <p className="text-sm text-gray-500 mb-6">
+          You do not have permissions to view this module. Please switch to an admin profile that has view, edit, or create access.
+        </p>
+      </div>
+    </main>
+  ) : (
+  /* BEGIN: MainContent */
       <main className="ml-0 md:ml-64 flex-1 min-w-0 w-full p-4 md:p-8 min-h-screen transition-all duration-300">
         {/* Mobile Header Bar */}
         <div className="flex md:hidden items-center justify-between bg-white border border-gray-200 p-4 rounded-xl mb-6 shadow-sm">
@@ -1029,7 +694,7 @@ export default function OrdersPage() {
               Oversee marketplace orders, filter results, and create manual admin orders.
             </p>
           </div>
-          <button 
+          {pagePermission === "create" && (<button 
             onClick={() => setIsAddModalOpen(true)}
             className="bg-stark-primary hover:bg-stark-dark text-white px-4 py-2.5 rounded-lg flex items-center space-x-2 transition-all shadow-sm font-medium text-sm shrink-0"
           >
@@ -1037,7 +702,7 @@ export default function OrdersPage() {
               <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
             </svg>
             <span>Add Order</span>
-          </button>
+          </button>)}
         </header>
         {/* END: ContentHeader */}
 
@@ -1393,15 +1058,17 @@ export default function OrdersPage() {
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <button 
+              <button
                 onClick={() => executeBulkStatusChange("Delivered")}
-                className="bg-white hover:bg-gray-100 text-stark-primary px-3 py-1.5 rounded-md text-xs font-bold transition-all"
+                disabled={pagePermission === "view"}
+                className={`bg-white hover:bg-gray-100 text-stark-primary px-3 py-1.5 rounded-md text-xs font-bold transition-all ${pagePermission === "view" ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 Mark Delivered
               </button>
-              <button 
+              <button
                 onClick={() => executeBulkStatusChange("Cancelled")}
-                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-xs font-bold transition-all border border-red-500"
+                disabled={pagePermission !== "create"}
+                className={`bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-xs font-bold transition-all border border-red-500 ${pagePermission !== "create" ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 Cancel Selected
               </button>
@@ -1411,72 +1078,78 @@ export default function OrdersPage() {
         {/* END: Bulk Actions Indicator Bar */}
 
         {/* BEGIN: Orders Table Section */}
-        <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden" data-purpose="orders-list">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-5 py-4 w-12 text-center">
-                    <input 
-                      type="checkbox"
-                      checked={paginatedOrders.length > 0 && paginatedOrders.every(o => selectedOrders.includes(o.id))}
-                      onChange={handleSelectAll}
-                      className="rounded text-stark-primary focus:ring-stark-primary"
-                    />
-                  </th>
-                  <th 
-                    onClick={() => handleSort("id")}
-                    className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider cursor-pointer hover:text-stark-text"
-                  >
-                    <div className="flex items-center gap-1">
-                      Order ID
-                      {sortBy === "id" && (sortOrder === "asc" ? "▲" : "▼")}
-                    </div>
-                  </th>
-                  <th 
-                    onClick={() => handleSort("placedDate")}
-                    className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider cursor-pointer hover:text-stark-text hidden lg:table-cell"
-                  >
-                    <div className="flex items-center gap-1">
-                      Placed Date
-                      {sortBy === "placedDate" && (sortOrder === "asc" ? "▲" : "▼")}
-                    </div>
-                  </th>
-                  <th 
-                    onClick={() => handleSort("customer")}
-                    className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider cursor-pointer hover:text-stark-text"
-                  >
-                    <div className="flex items-center gap-1">
-                      Customer
-                      {sortBy === "customer" && (sortOrder === "asc" ? "▲" : "▼")}
-                    </div>
-                  </th>
-                  <th className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider hidden sm:table-cell">Vendors</th>
-                  <th className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider hidden md:table-cell">Delivery Partner</th>
-                  <th className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider hidden lg:table-cell">Fulfillment</th>
-                  <th className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider hidden sm:table-cell">Payment</th>
-                  <th className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider">Status</th>
-                  <th 
-                    onClick={() => handleSort("totalAmount")}
-                    className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider cursor-pointer hover:text-stark-text"
-                  >
-                    <div className="flex items-center gap-1">
-                      Total
-                      {sortBy === "totalAmount" && (sortOrder === "asc" ? "▲" : "▼")}
-                    </div>
-                  </th>
-                  <th className="px-5 py-4 w-20"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {paginatedOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan={11} className="text-center py-12 text-sm text-stark-muted">
-                      No orders found matching the filter criteria.
-                    </td>
+        {paginatedOrders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center bg-white rounded-xl border border-gray-150 p-12 shadow-sm text-center">
+            <img
+              src="/empty-state.png"
+              alt="Empty state illustration"
+              className="w-64 h-64 object-contain mb-6 rounded-2xl"
+            />
+            <h3 className="text-lg font-black text-stark-text mb-2">No Orders Found</h3>
+            <p className="text-sm text-stark-muted max-w-sm">
+              There are currently no records available to display.
+            </p>
+          </div>
+        ) : (
+          <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden" data-purpose="orders-list">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="px-5 py-4 w-12 text-center">
+                      <input 
+                        type="checkbox"
+                        checked={paginatedOrders.length > 0 && paginatedOrders.every(o => selectedOrders.includes(o.id))}
+                        onChange={handleSelectAll}
+                        className="rounded text-stark-primary focus:ring-stark-primary"
+                      />
+                    </th>
+                    <th 
+                      onClick={() => handleSort("id")}
+                      className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider cursor-pointer hover:text-stark-text"
+                    >
+                      <div className="flex items-center gap-1">
+                        Order ID
+                        {sortBy === "id" && (sortOrder === "asc" ? "▲" : "▼")}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort("placedDate")}
+                      className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider cursor-pointer hover:text-stark-text hidden lg:table-cell"
+                    >
+                      <div className="flex items-center gap-1">
+                        Placed Date
+                        {sortBy === "placedDate" && (sortOrder === "asc" ? "▲" : "▼")}
+                      </div>
+                    </th>
+                    <th 
+                      onClick={() => handleSort("customer")}
+                      className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider cursor-pointer hover:text-stark-text"
+                    >
+                      <div className="flex items-center gap-1">
+                        Customer
+                        {sortBy === "customer" && (sortOrder === "asc" ? "▲" : "▼")}
+                      </div>
+                    </th>
+                    <th className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider hidden sm:table-cell">Vendors</th>
+                    <th className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider hidden md:table-cell">Delivery Partner</th>
+                    <th className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider hidden lg:table-cell">Fulfillment</th>
+                    <th className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider hidden sm:table-cell">Payment</th>
+                    <th className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider">Status</th>
+                    <th 
+                      onClick={() => handleSort("totalAmount")}
+                      className="px-5 py-4 text-xs font-semibold text-stark-muted uppercase tracking-wider cursor-pointer hover:text-stark-text"
+                    >
+                      <div className="flex items-center gap-1">
+                        Total
+                        {sortBy === "totalAmount" && (sortOrder === "asc" ? "▲" : "▼")}
+                      </div>
+                    </th>
+                    <th className="px-5 py-4 w-20"></th>
                   </tr>
-                ) : (
-                  paginatedOrders.map(order => {
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {paginatedOrders.map(order => {
                     const isSelected = selectedOrders.includes(order.id);
                     
                     // Style badges based on state
@@ -1600,47 +1273,50 @@ export default function OrdersPage() {
                               <div className="absolute right-0 top-6 hidden group-hover/action-menu:block w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-30">
                                 <p className="text-[10px] font-bold text-stark-muted px-3 py-1 uppercase tracking-wider">Quick actions</p>
                                 
-                                <button 
+                                <button
                                   onClick={() => handleUpdateOrderStatus(order.id, "Packed")}
-                                  className="w-full text-left px-3 py-1.5 text-xs text-stark-text hover:bg-stark-accent font-medium"
+                                  disabled={pagePermission === "view"}
+                                  className={`w-full text-left px-3 py-1.5 text-xs text-stark-text hover:bg-stark-accent font-medium ${pagePermission === "view" ? "opacity-50 cursor-not-allowed hover:bg-transparent" : ""}`}
                                 >
                                   📦 Mark Packed
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => handleUpdateOrderStatus(order.id, "Dispatched")}
-                                  className="w-full text-left px-3 py-1.5 text-xs text-stark-text hover:bg-stark-accent font-medium"
+                                  disabled={pagePermission === "view"}
+                                  className={`w-full text-left px-3 py-1.5 text-xs text-stark-text hover:bg-stark-accent font-medium ${pagePermission === "view" ? "opacity-50 cursor-not-allowed hover:bg-transparent" : ""}`}
                                 >
                                   🚚 Mark Dispatched
                                 </button>
-                                <button 
+                                <button
                                   onClick={() => handleUpdateOrderStatus(order.id, "Delivered")}
-                                  className="w-full text-left px-3 py-1.5 text-xs text-stark-text hover:bg-stark-accent font-medium"
+                                  disabled={pagePermission === "view"}
+                                  className={`w-full text-left px-3 py-1.5 text-xs text-stark-text hover:bg-stark-accent font-medium ${pagePermission === "view" ? "opacity-50 cursor-not-allowed hover:bg-transparent" : ""}`}
                                 >
                                   ✅ Mark Delivered
                                 </button>
                                 
                                 <div className="border-t border-gray-100 my-1"></div>
                                 
-                                <button 
-                                  disabled={["Dispatched", "Out for Delivery", "Delivered", "Cancelled"].includes(order.orderStatus)}
+                                <button
+                                  disabled={["Dispatched", "Out for Delivery", "Delivered", "Cancelled"].includes(order.orderStatus) || pagePermission !== "create"}
                                   onClick={() => handleCancelOrder(order.id)}
                                   className={`w-full text-left px-3 py-1.5 text-xs font-semibold ${
                                     ["Dispatched", "Out for Delivery", "Delivered", "Cancelled"].includes(order.orderStatus)
                                       ? "text-gray-300 cursor-not-allowed" 
                                       : "text-red-500 hover:bg-red-50"
-                                  }`}
+                                  } ${pagePermission !== "create" ? "text-gray-300 cursor-not-allowed opacity-50 hover:bg-transparent" : ""}`}
                                 >
                                   ❌ Cancel Order
                                 </button>
                                 
-                                <button 
-                                  disabled={order.paymentStatus !== "Paid"}
+                                <button
+                                  disabled={order.paymentStatus !== "Paid" || pagePermission !== "create"}
                                   onClick={() => handleRefundOrder(order.id)}
                                   className={`w-full text-left px-3 py-1.5 text-xs font-semibold ${
                                     order.paymentStatus !== "Paid"
                                       ? "text-gray-300 cursor-not-allowed" 
                                       : "text-amber-600 hover:bg-amber-50"
-                                  }`}
+                                  } ${pagePermission !== "create" ? "text-gray-300 cursor-not-allowed opacity-50 hover:bg-transparent" : ""}`}
                                 >
                                   ↩ Refund Amount
                                 </button>
@@ -1650,15 +1326,14 @@ export default function OrdersPage() {
                         </td>
                       </tr>
                     );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                  })}
+                </tbody>
+              </table>
+            </div>
 
-          {/* BEGIN: Table Pagination Footer */}
-          <div className="bg-white px-5 py-4 border-t border-gray-150 flex items-center justify-between">
-            <span className="text-xs text-stark-muted">
+            {/* BEGIN: Table Pagination Footer */}
+            <div className="bg-white px-5 py-4 border-t border-gray-150 flex items-center justify-between">
+              <span className="text-xs text-stark-muted">
               Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredOrders.length)} of {filteredOrders.length} orders
             </span>
             <div className="flex gap-1.5">
@@ -1701,9 +1376,11 @@ export default function OrdersPage() {
           </div>
           {/* END: Table Pagination Footer */}
         </section>
-        {/* END: Orders Table Section */}
+      )}
+      {/* END: Orders Table Section */}
 
       </main>
+      )}
       {/* END: MainContent */}
 
       {/* BEGIN: Order Details Slide-over Drawer */}
